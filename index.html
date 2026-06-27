@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="misFinanzas, app familiar chilena para controlar ingresos, egresos y presupuestos mensuales.">
+  <title>misFinanzas | Finanzas familiares</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Raleway:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/20I2KoC9BqYz5oT9QWIDbLZDhJANzzNnqK/zqkS0y2hClM16FqKqQ3dQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+  <script src="js/app.js" type="module"></script>
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">Saltar al contenido</a>
+
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand" aria-label="misFinanzas">
+        <span class="brand__icon" aria-hidden="true"><i class="fa-solid fa-coins"></i></span>
+        <div>
+          <h1>misFinanzas</h1>
+          <p>Control familiar mensual</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <label class="field field--compact" for="monthSelector">
+          <span>Mes</span>
+          <input id="monthSelector" type="month" aria-label="Seleccionar mes">
+        </label>
+        <button class="button button--secondary" id="openFamilyModal" type="button">
+          <i class="fa-solid fa-users" aria-hidden="true"></i>
+          Configurar Familia
+        </button>
+      </div>
+    </header>
+
+    <main id="mainContent" class="main-content">
+      <nav class="tabs" aria-label="Secciones del dashboard">
+        <button class="tab is-active" type="button" data-tab="resumen" aria-selected="true">
+          <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+          Resumen
+        </button>
+        <button class="tab" type="button" data-tab="ingresos" aria-selected="false">
+          <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+          Ingresos
+        </button>
+        <button class="tab" type="button" data-tab="egresos" aria-selected="false">
+          <i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i>
+          Egresos
+        </button>
+        <button class="tab" type="button" data-tab="presupuesto" aria-selected="false">
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+          Presupuesto
+        </button>
+      </nav>
+
+      <section class="tab-panel is-active" id="tab-resumen" data-panel="resumen" aria-labelledby="Resumen">
+        <div class="summary-grid">
+          <article class="metric-card metric-card--income">
+            <span class="metric-card__label">Ingresos totales</span>
+            <strong id="summaryIncome">$0</strong>
+            <small>Entradas del mes seleccionado</small>
+          </article>
+          <article class="metric-card metric-card--expense">
+            <span class="metric-card__label">Egresos totales</span>
+            <strong id="summaryExpense">$0</strong>
+            <small>Gastos registrados del mes</small>
+          </article>
+          <article class="metric-card metric-card--balance">
+            <span class="metric-card__label">Balance</span>
+            <strong id="summaryBalance">$0</strong>
+            <small>Diferencia ingresos - egresos</small>
+          </article>
+          <article class="metric-card metric-card--saving">
+            <span class="metric-card__label">% Ahorro</span>
+            <strong id="summarySavingRate">0%</strong>
+            <small>Sobre ingresos mensuales</small>
+          </article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="card chart-card">
+            <div class="card__header">
+              <div>
+                <h2>Distribución de egresos</h2>
+                <p>Por categoría del mes</p>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="expensePieChart" aria-label="Gráfico torta de egresos" role="img"></canvas>
+            </div>
+            <p class="chart-empty" id="expensePieEmpty" hidden>No hay egresos para graficar.</p>
+          </article>
+
+          <article class="card chart-card">
+            <div class="card__header">
+              <div>
+                <h2>Ingresos vs egresos</h2>
+                <p>Últimos 6 meses</p>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="monthlyBarChart" aria-label="Gráfico de barras mensual" role="img"></canvas>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__header">
+              <div>
+                <h2>Alertas de presupuesto</h2>
+                <p>Categorías con límite superado o en riesgo</p>
+              </div>
+            </div>
+            <div id="budgetAlerts" class="stack-list"></div>
+          </article>
+
+          <article class="card">
+            <div class="card__header">
+              <div>
+                <h2>Top 5 egresos</h2>
+                <p>Gastos más altos del mes</p>
+              </div>
+            </div>
+            <div id="topExpenses" class="stack-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-ingresos" data-panel="ingresos" hidden>
+        <div class="section-heading">
+          <div>
+            <h2>Ingresos</h2>
+            <p>Registra sueldos, honorarios, aguinaldos, subsidios y extras.</p>
+          </div>
+          <button class="button button--primary" id="openIncomeModal" type="button">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            Nuevo Ingreso
+          </button>
+        </div>
+
+        <div class="toolbar card">
+          <label class="field" for="incomeMemberFilter">
+            <span>Integrante</span>
+            <select id="incomeMemberFilter"></select>
+          </label>
+          <label class="field" for="incomeTypeFilter">
+            <span>Tipo</span>
+            <select id="incomeTypeFilter"></select>
+          </label>
+          <div class="total-pill">
+            <span>Total del mes</span>
+            <strong id="incomeTabTotal">$0</strong>
+          </div>
+        </div>
+
+        <article class="card table-card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Integrante</th>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th class="text-right">Monto</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="incomeTableBody"></tbody>
+            </table>
+          </div>
+          <p class="empty-state" id="incomeEmptyState">No hay ingresos registrados para este mes.</p>
+        </article>
+      </section>
+
+      <section class="tab-panel" id="tab-egresos" data-panel="egresos" hidden>
+        <div class="section-heading">
+          <div>
+            <h2>Egresos</h2>
+            <p>Controla vivienda, servicios, alimentación, educación, deudas y más.</p>
+          </div>
+          <button class="button button--primary" id="openExpenseModal" type="button">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            Nuevo Egreso
+          </button>
+        </div>
+
+        <div class="toolbar card">
+          <label class="field" for="expenseCategoryFilter">
+            <span>Categoría</span>
+            <select id="expenseCategoryFilter"></select>
+          </label>
+          <label class="field" for="expenseMemberFilter">
+            <span>Integrante</span>
+            <select id="expenseMemberFilter"></select>
+          </label>
+          <label class="field" for="expenseMethodFilter">
+            <span>Método pago</span>
+            <select id="expenseMethodFilter"></select>
+          </label>
+          <div class="total-pill total-pill--expense">
+            <span>Total del mes</span>
+            <strong id="expenseTabTotal">$0</strong>
+          </div>
+        </div>
+
+        <article class="card table-card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
+                  <th>Integrante</th>
+                  <th class="text-right">Monto</th>
+                  <th>Pagado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="expenseTableBody"></tbody>
+            </table>
+          </div>
+          <p class="empty-state" id="expenseEmptyState">No hay egresos registrados para este mes.</p>
+        </article>
+      </section>
+
+      <section class="tab-panel" id="tab-presupuesto" data-panel="presupuesto" hidden>
+        <div class="section-heading">
+          <div>
+            <h2>Presupuesto mensual</h2>
+            <p>Define límites por categoría y revisa el avance del gasto.</p>
+          </div>
+          <button class="button button--primary" id="saveBudgetsButton" type="button">
+            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+            Guardar Presupuesto
+          </button>
+        </div>
+        <div id="budgetGrid" class="budget-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="modal" id="familyModal" aria-labelledby="familyModalTitle">
+    <div class="modal__content">
+      <div class="modal__header">
+        <div>
+          <h2 id="familyModalTitle">Configurar Familia</h2>
+          <p>Agrega los integrantes que participan en el presupuesto mensual.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-modal aria-label="Cerrar">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <form id="familyForm" class="form-grid">
+        <input type="hidden" id="memberId">
+        <label class="field" for="memberName">
+          <span>Nombre</span>
+          <input id="memberName" type="text" maxlength="80" autocomplete="name" required>
+        </label>
+        <label class="field" for="memberRelationship">
+          <span>Parentesco</span>
+          <input id="memberRelationship" type="text" maxlength="60" placeholder="Ej: Mamá, Papá, Hija" required>
+        </label>
+        <div class="form-actions">
+          <button class="button button--ghost" type="button" id="clearMemberForm">Limpiar</button>
+          <button class="button button--primary" type="submit">Guardar integrante</button>
+        </div>
+      </form>
+
+      <div class="modal-list" id="familyMembersList"></div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="incomeModal" aria-labelledby="incomeModalTitle">
+    <div class="modal__content">
+      <div class="modal__header">
+        <div>
+          <h2 id="incomeModalTitle">Nuevo Ingreso</h2>
+          <p>Completa los datos del ingreso familiar.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-modal aria-label="Cerrar">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <form id="incomeForm" class="form-grid">
+        <input type="hidden" id="incomeId">
+        <label class="field" for="incomeMember">
+          <span>Integrante</span>
+          <select id="incomeMember" required></select>
+        </label>
+        <label class="field" for="incomeType">
+          <span>Tipo</span>
+          <select id="incomeType" required></select>
+        </label>
+        <label class="field field--full" for="incomeDescription">
+          <span>Descripción</span>
+          <input id="incomeDescription" type="text" maxlength="120" required>
+        </label>
+        <label class="field" for="incomeAmount">
+          <span>Monto CLP</span>
+          <input id="incomeAmount" type="number" min="0" step="1000" inputmode="numeric" required>
+          <small id="incomeAmountPreview">$0</small>
+        </label>
+        <label class="field" for="incomeDate">
+          <span>Fecha</span>
+          <input id="incomeDate" type="date" required>
+        </label>
+        <label class="check-field">
+          <input id="incomeRecurring" type="checkbox">
+          <span>Ingreso recurrente</span>
+        </label>
+        <label class="field" for="incomeFrequency">
+          <span>Frecuencia</span>
+          <select id="incomeFrequency">
+            <option value="">Sin frecuencia</option>
+            <option value="mensual">Mensual</option>
+            <option value="trimestral">Trimestral</option>
+            <option value="anual">Anual</option>
+          </select>
+        </label>
+        <div class="form-actions field--full">
+          <button class="button button--ghost" type="button" data-close-modal>Cancelar</button>
+          <button class="button button--primary" type="submit">Guardar ingreso</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="expenseModal" aria-labelledby="expenseModalTitle">
+    <div class="modal__content">
+      <div class="modal__header">
+        <div>
+          <h2 id="expenseModalTitle">Nuevo Egreso</h2>
+          <p>Registra el gasto y su categoría chilena.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-modal aria-label="Cerrar">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <form id="expenseForm" class="form-grid">
+        <input type="hidden" id="expenseId">
+        <label class="field" for="expenseCategory">
+          <span>Categoría</span>
+          <select id="expenseCategory" required></select>
+        </label>
+        <label class="field" for="expenseSubcategory">
+          <span>Subcategoría</span>
+          <select id="expenseSubcategory"></select>
+        </label>
+        <label class="field field--full" for="expenseDescription">
+          <span>Descripción</span>
+          <input id="expenseDescription" type="text" maxlength="120" required>
+        </label>
+        <label class="field" for="expenseAmount">
+          <span>Monto CLP</span>
+          <input id="expenseAmount" type="number" min="0" step="1000" inputmode="numeric" required>
+          <small id="expenseAmountPreview">$0</small>
+        </label>
+        <label class="field" for="expenseDate">
+          <span>Fecha</span>
+          <input id="expenseDate" type="date" required>
+        </label>
+        <label class="field" for="expenseMember">
+          <span>Integrante</span>
+          <select id="expenseMember"></select>
+        </label>
+        <label class="field" for="expensePaymentMethod">
+          <span>Método de pago</span>
+          <select id="expensePaymentMethod" required></select>
+        </label>
+        <label class="check-field">
+          <input id="expensePaid" type="checkbox" checked>
+          <span>Pagado</span>
+        </label>
+        <label class="check-field">
+          <input id="expenseRecurring" type="checkbox">
+          <span>Egreso recurrente</span>
+        </label>
+        <label class="field" for="expenseFrequency">
+          <span>Frecuencia</span>
+          <select id="expenseFrequency">
+            <option value="">Sin frecuencia</option>
+            <option value="mensual">Mensual</option>
+            <option value="trimestral">Trimestral</option>
+            <option value="anual">Anual</option>
+          </select>
+        </label>
+        <div class="form-actions field--full">
+          <button class="button button--ghost" type="button" data-close-modal>Cancelar</button>
+          <button class="button button--primary" type="submit">Guardar egreso</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

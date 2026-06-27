@@ -1,0 +1,89 @@
+@media (max-width: 1080px) {
+  .summary-grid,
+  .dashboard-grid,
+  .budget-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: var(--space-3);
+  }
+
+  .app-header,
+  .header-actions,
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .app-header {
+    position: static;
+  }
+
+  .tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-grid,
+  .dashboard-grid,
+  .toolbar,
+  .budget-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field--full {
+    grid-column: auto;
+  }
+
+  .button,
+  .tab {
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions .button {
+    width: 100%;
+  }
+
+  .budget-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand__icon {
+    height: 2.8rem;
+    width: 2.8rem;
+  }
+
+  .tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .card,
+  .metric-card,
+  .modal__content {
+    padding: var(--space-4);
+  }
+
+  .member-item,
+  .stack-item__row,
+  .budget-card__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .row-actions {
+    justify-content: flex-end;
+  }
+}
