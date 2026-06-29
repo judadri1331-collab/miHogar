@@ -11,7 +11,15 @@ import { TabsRenderer } from "./ui/TabsRenderer.js";
 import { EXPENSE_CATEGORIES, INCOME_TYPES, PAYMENT_METHODS } from "./utils/constants.js";
 import { formatCLP, formatDate, humanizeOption } from "./utils/formatters.js";
 import { escapeHTML, getCurrentMonth, getDefaultDateForMonth, isInMonth } from "./utils/helpers.js";
-import { requireText, toPositiveAmount } from "./utils/validators.js";
+import {
+  toBudgetAmount,
+  toPositiveAmount,
+  validateDate,
+  validateDescription,
+  validateOptionalSelectValue,
+  validatePersonText,
+  validateSelectValue
+} from "./utils/validators.js";
 
 class MisFinanzasApp {
   constructor() {
@@ -163,8 +171,8 @@ class MisFinanzasApp {
     try {
       this.familyService.save({
         id: document.querySelector("#memberId").value || undefined,
-        name: requireText(document.querySelector("#memberName").value, "Nombre"),
-        relationship: requireText(document.querySelector("#memberRelationship").value, "Parentesco")
+        name: validatePersonText(document.querySelector("#memberName").value, "Nombre"),
+        relationship: validatePersonText(document.querySelector("#memberRelationship").value, "Parentesco", { max: 60 })
       });
       this.clearMemberForm();
       this.toast("Integrante guardado.");
@@ -177,15 +185,21 @@ class MisFinanzasApp {
   saveIncome(event) {
     event.preventDefault();
     try {
+      const memberIds = this.members.map((member) => member.id);
+      const incomeTypes = INCOME_TYPES.map(([value]) => value);
+      const frequencies = ["mensual", "trimestral", "anual"];
+      const isRecurring = document.querySelector("#incomeRecurring").checked;
       this.financeService.saveIncome({
         id: document.querySelector("#incomeId").value || undefined,
-        familyMemberId: requireText(document.querySelector("#incomeMember").value, "Integrante"),
-        type: document.querySelector("#incomeType").value,
-        description: requireText(document.querySelector("#incomeDescription").value, "Descripcion"),
+        familyMemberId: validateSelectValue(document.querySelector("#incomeMember").value, memberIds, "Integrante"),
+        type: validateSelectValue(document.querySelector("#incomeType").value, incomeTypes, "Tipo de ingreso"),
+        description: validateDescription(document.querySelector("#incomeDescription").value),
         amount: toPositiveAmount(document.querySelector("#incomeAmount").value),
-        date: document.querySelector("#incomeDate").value,
-        isRecurring: document.querySelector("#incomeRecurring").checked,
-        frequency: document.querySelector("#incomeFrequency").value || null
+        date: validateDate(document.querySelector("#incomeDate").value),
+        isRecurring,
+        frequency: isRecurring
+          ? validateSelectValue(document.querySelector("#incomeFrequency").value, frequencies, "Frecuencia")
+          : null
       });
       document.querySelector("#incomeModal").close();
       this.toast("Ingreso guardado.");
@@ -198,18 +212,27 @@ class MisFinanzasApp {
   saveExpense(event) {
     event.preventDefault();
     try {
+      const categoryNames = EXPENSE_CATEGORIES.map((category) => category.name);
+      const paymentMethods = PAYMENT_METHODS.map(([value]) => value);
+      const memberIds = this.members.map((member) => member.id);
+      const frequencies = ["mensual", "trimestral", "anual"];
+      const category = validateSelectValue(document.querySelector("#expenseCategory").value, categoryNames, "Categoria");
+      const subcategories = EXPENSE_CATEGORIES.find((item) => item.name === category)?.subcategories || [];
+      const isRecurring = document.querySelector("#expenseRecurring").checked;
       this.financeService.saveExpense({
         id: document.querySelector("#expenseId").value || undefined,
-        category: document.querySelector("#expenseCategory").value,
-        subcategory: document.querySelector("#expenseSubcategory").value || null,
-        description: requireText(document.querySelector("#expenseDescription").value, "Descripcion"),
+        category,
+        subcategory: validateOptionalSelectValue(document.querySelector("#expenseSubcategory").value, subcategories, "Subcategoria"),
+        description: validateDescription(document.querySelector("#expenseDescription").value),
         amount: toPositiveAmount(document.querySelector("#expenseAmount").value),
-        date: document.querySelector("#expenseDate").value,
-        familyMemberId: document.querySelector("#expenseMember").value || null,
-        paymentMethod: document.querySelector("#expensePaymentMethod").value,
+        date: validateDate(document.querySelector("#expenseDate").value),
+        familyMemberId: validateOptionalSelectValue(document.querySelector("#expenseMember").value, memberIds, "Integrante"),
+        paymentMethod: validateSelectValue(document.querySelector("#expensePaymentMethod").value, paymentMethods, "Metodo de pago"),
         isPaid: document.querySelector("#expensePaid").checked,
-        isRecurring: document.querySelector("#expenseRecurring").checked,
-        frequency: document.querySelector("#expenseFrequency").value || null
+        isRecurring,
+        frequency: isRecurring
+          ? validateSelectValue(document.querySelector("#expenseFrequency").value, frequencies, "Frecuencia")
+          : null
       });
       document.querySelector("#expenseModal").close();
       this.toast("Egreso guardado.");
@@ -220,13 +243,18 @@ class MisFinanzasApp {
   }
 
   saveBudgets() {
-    const budgets = [...document.querySelectorAll("[data-budget-input]")].map((input) => ({
-      category: input.dataset.budgetInput,
-      limitAmount: Number(input.value) || 0
-    }));
-    this.budgetService.saveMany(this.month, budgets);
-    this.toast("Presupuesto guardado.");
-    this.render();
+    try {
+      const categoryNames = EXPENSE_CATEGORIES.map((category) => category.name);
+      const budgets = [...document.querySelectorAll("[data-budget-input]")].map((input) => ({
+        category: validateSelectValue(input.dataset.budgetInput, categoryNames, "Categoria"),
+        limitAmount: toBudgetAmount(input.value, `Presupuesto de ${input.dataset.budgetInput}`)
+      }));
+      this.budgetService.saveMany(this.month, budgets);
+      this.toast("Presupuesto guardado.");
+      this.render();
+    } catch (error) {
+      this.toast(error.message);
+    }
   }
 
   handleMemberAction(event) {
